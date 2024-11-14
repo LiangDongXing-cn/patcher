@@ -134,8 +134,9 @@ public class PatcherUtils {
         // chooseJarContents 控制是否可以选择.jar文件内容
         // chooseMultiple    控制是否可以选择多个文件
         FileChooserDescriptor fileChooserDescriptor = new FileChooserDescriptor(false, true, false, false, false, false);
+        fileChooserDescriptor.setTitle(PatcherBundle.message("patcher.value.2"));
         // TextFieldWithBrowseButton 添加文件夹选择监听
-        textFieldWithBrowseButton.addBrowseFolderListener(PatcherBundle.message("patcher.value.2"), "", project, fileChooserDescriptor);
+        textFieldWithBrowseButton.addBrowseFolderListener(project, fileChooserDescriptor);
     }
 
 
