@@ -1,5 +1,7 @@
 # <img src="https://raw.githubusercontent.com/LiangDongXing-cn/patcher/master/src/main/resources/META-INF/pluginIcon.svg" alt="Patcher Logo" width="30" height="30"> Patcher
 
+**其他语言版本: [中文](README.md)**
+
 ## Project Overview
 
 Patcher is an IntelliJ IDEA plugin designed for efficiently extracting and packaging patch files for Java applications. Key features include:
