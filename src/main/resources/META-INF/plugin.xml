@@ -14,7 +14,22 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description>
-        <![CDATA[ Java patch file extraction packaging refers to packaging modifications or updates in Java applications into a file for use when updates or fixes are needed. This process usually involves extracting modifications from existing Java applications and packaging them into an executable patch file for updating or repairing existing programs. This process is essential to keep the application running properly, because it can solve security vulnerabilities, fix errors, and enhance features. ]]></description>
+        <![CDATA[
+        <p>Patcher 是一个 IntelliJ IDEA 插件，用于高效地提取和打包 Java 应用程序的补丁文件。主要功能包括：</p>
+        <ul>
+          <li>从现有 Java 应用程序中提取修改内容</li>
+          <li>将修改打包成可执行的补丁文件</li>
+          <li>支持多种模块类型和文件格式</li>
+          <li>简化补丁创建和分发流程</li>
+        </ul>
+        <p>Patcher is an IntelliJ IDEA plugin designed for efficiently extracting and packaging patch files for Java applications. Key features include:</p>
+        <ul>
+          <li>Extracting modifications from existing Java applications</li>
+          <li>Packaging modifications into executable patch files</li>
+          <li>Supporting multiple module types and file formats</li>
+          <li>Simplifying patch creation and distribution workflows</li>
+        </ul>
+        ]]></description>
     <change-notes>
         <![CDATA[
         <h2>2025.1</h2>
