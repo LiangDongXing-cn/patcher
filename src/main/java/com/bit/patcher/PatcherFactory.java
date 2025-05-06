@@ -5,6 +5,8 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import com.intellij.ui.content.ContentManager;
+import com.intellij.ui.content.impl.ContentImpl;
 import kotlin.coroutines.Continuation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,10 +44,10 @@ public class PatcherFactory implements ToolWindowFactory {
         PVFUtils.getVirtualFilesMap().clear();
         PVFUtils.removeAllChildren();
         // 创建工具窗口内容
-        ContentFactory contentFactory = ContentFactory.getInstance();
-        Content content = contentFactory.createContent(patcherToolWindow.getContent(), PatcherBundle.message("patcher.display.name"), false);
+        Content content = ContentFactory.getInstance().createContent(patcherToolWindow.getContent(), "", false);
         // 将内容添加到工具窗口
-        toolWindow.getContentManager().addContent(content);
+        ContentManager contentManager = toolWindow.getContentManager();
+        contentManager.addContent(content);
     }
 
     @Override

@@ -17,6 +17,10 @@
         <![CDATA[ Java patch file extraction packaging refers to packaging modifications or updates in Java applications into a file for use when updates or fixes are needed. This process usually involves extracting modifications from existing Java applications and packaging them into an executable patch file for updating or repairing existing programs. This process is essential to keep the application running properly, because it can solve security vulnerabilities, fix errors, and enhance features. ]]></description>
     <change-notes>
         <![CDATA[
+        <h2>2025.1</h2>
+        <ul>
+          <li>兼容 2025.1 新版本。</li>
+        </ul>
         <h2>2024.4</h2>
         <ul>
           <li>兼容 2024.3 新版本。</li>
@@ -67,8 +71,7 @@
     </extensions>
     <actions>
         <!-- Add your actions here -->
-        <action id="Patcher" class="com.bit.patcher.PatcherAction" text="Create Patcher" icon="PatcherIcons.PATCHER"
-                description="Create Java SE and Java EE project patch files.">
+        <action id="Patcher" class="com.bit.patcher.PatcherAction" icon="PatcherIcons.PATCHER">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
             <add-to-group group-id="Vcs.Log.ChangesBrowser.Popup" anchor="last"/>
