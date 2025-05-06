@@ -1,4 +1,4 @@
-# <img src="https://raw.githubusercontent.com/Liang-Dongxing/patcher/master/src/main/resources/META-INF/pluginIcon.svg" alt="Patcher Logo" width="30" height="30"> Patcher
+# <img src="https://raw.githubusercontent.com/LiangDongXing-cn/patcher/master/src/main/resources/META-INF/pluginIcon.svg" alt="Patcher Logo" width="30" height="30"> Patcher
 
 ## 项目简介
 
