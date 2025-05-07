@@ -19,7 +19,7 @@ public class PatcherNotificationUtils {
      * @param openPath 打开的路径
      */
     public static void successNotification(String openPath) {
-        Notification notification = new Notification(PatcherBundle.message("patcher.name"),
+        Notification notification = new Notification(PatcherUtils.PATCHER_ID,
                 PatcherBundle.message("patcher.name"),
                 PatcherBundle.message("patcher.notification.content"),
                 NotificationType.INFORMATION);

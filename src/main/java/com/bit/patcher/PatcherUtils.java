@@ -40,6 +40,7 @@ import java.util.stream.Stream;
  */
 public class PatcherUtils {
 
+    public static final String PATCHER_ID = "Patcher";
     private static final String BOOTINF = "(SpringBoot) BOOT-INF";
     private static final String WEBINF = "(Web) WEB-INF";
     private static PatcherToolWindow patcherToolWindow;
