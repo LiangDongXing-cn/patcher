@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.bit"
-version = "2025.1"
+version = "2026.1"
 
 repositories {
     mavenCentral()
@@ -22,7 +22,7 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.38")
     annotationProcessor("org.projectlombok:lombok:1.18.38")
     intellijPlatform {
-        create("IU", "2025.1")
+        create("IU", "2026.1")
         bundledPlugin("com.intellij.java")
     }
 }

@@ -1,5 +1,6 @@
 package com.bit.patcher;
 
+import com.intellij.openapi.application.WriteIntentReadAction;
 import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.module.Module;
@@ -188,13 +189,12 @@ public class PatcherUtils {
             if (virtualFilesMap.size() > 0) {
                 exportDeleteFile(project, deleteOldPatcherFilesJbCheckBox, savePathTextFieldWithBrowseButton);
                 exportSourcesFile(project, savePathTextFieldWithBrowseButton, exportTheSourceCodeJbCheckBox);
-                // 编译项目
-                CompilerManager.getInstance(project).make((aborted, errors, warnings, compileContext) -> {
+                WriteIntentReadAction.run((Runnable) () -> CompilerManager.getInstance(project).make((aborted, errors, warnings, compileContext) -> {
                     if (errors == 0) {
                         exportClassFile(project, savePathTextFieldWithBrowseButton, moduleNameComboBox, moduleTypeComboBox);
                         PatcherNotificationUtils.successNotification(savePathTextFieldWithBrowseButton.getText());
                     }
-                });
+                }));
             }
         });
     }
