@@ -4,7 +4,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
-import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
@@ -67,7 +67,7 @@ public class PatcherAction extends AnAction {
                 List<PatcherVirtualFile> collected = new ArrayList<>();
                 for (VirtualFile virtualFile : virtualFiles) {
                     indicator.checkCanceled();
-                    ReadAction.run(() -> collected.addAll(PatcherUtils.getExportFile(project, virtualFile)));
+                    ApplicationManager.getApplication().runReadAction((Runnable) () -> collected.addAll(PatcherUtils.getExportFile(project, virtualFile)));
                 }
                 PatcherProjectService.getInstance(project).resetWith(collected);
             }

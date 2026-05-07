@@ -2,13 +2,17 @@ package com.bit.patcher;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -131,12 +135,69 @@ public final class PatcherProjectService {
         DefaultMutableTreeNode root = new DefaultMutableTreeNode();
         virtualFilesMap.forEach((key, value) -> {
             DefaultMutableTreeNode moduleNode = new DefaultMutableTreeNode(key);
-            value.forEach(virtualFile -> moduleNode.add(new DefaultMutableTreeNode(virtualFile)));
+            buildDirectoryTree(moduleNode, value);
             root.add(moduleNode);
         });
         DefaultTreeModel model = new DefaultTreeModel(root);
         saveFilesTree.setModel(model);
         TreeUtil.expandAll(saveFilesTree);
+    }
+
+    /**
+     * 将文件列表按目录层级构建为树结构节点。
+     * 每个中间目录作为一个文件夹节点，叶子节点为 PatcherVirtualFile。
+     */
+    private void buildDirectoryTree(DefaultMutableTreeNode moduleNode, List<PatcherVirtualFile> files) {
+        // 查找模块的内容根路径，用于计算相对路径
+        String baseDir = "";
+        if (!files.isEmpty()) {
+            Module module = files.get(0).getModule();
+            if (module != null) {
+                VirtualFile[] contentRoots = ModuleRootManager.getInstance(module).getContentRoots();
+                if (contentRoots.length > 0) {
+                    baseDir = contentRoots[0].getPath();
+                }
+            }
+        }
+
+        // dirNodes 缓存已创建的目录节点，key 为相对目录路径
+        Map<String, DefaultMutableTreeNode> dirNodes = new HashMap<>();
+
+        for (PatcherVirtualFile pvf : files) {
+            String filePath = pvf.getPath();
+            // 计算相对路径
+            String relativePath;
+            if (!baseDir.isEmpty() && filePath.startsWith(baseDir + "/")) {
+                relativePath = filePath.substring(baseDir.length() + 1);
+            } else {
+                relativePath = pvf.getName();
+            }
+
+            // 按 / 分割得到路径各段
+            String[] segments = relativePath.split("/");
+            DefaultMutableTreeNode parent = moduleNode;
+            StringBuilder pathBuilder = new StringBuilder();
+
+            // 为中间目录创建节点
+            for (int i = 0; i < segments.length - 1; i++) {
+                if (pathBuilder.length() > 0) {
+                    pathBuilder.append("/");
+                }
+                pathBuilder.append(segments[i]);
+                String dirPath = pathBuilder.toString();
+
+                DefaultMutableTreeNode dirNode = dirNodes.get(dirPath);
+                if (dirNode == null) {
+                    dirNode = new DefaultMutableTreeNode(segments[i]);
+                    dirNodes.put(dirPath, dirNode);
+                    parent.add(dirNode);
+                }
+                parent = dirNode;
+            }
+
+            // 叶子节点为 PatcherVirtualFile
+            parent.add(new DefaultMutableTreeNode(pvf));
+        }
     }
 
     /**

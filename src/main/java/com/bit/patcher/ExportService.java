@@ -256,15 +256,10 @@ public final class ExportService {
 
     /**
      * 在 ReadAction 内计算源码导出所需的快照（模块目录、相对路径、文件内容字节）。
-     * 返回 null 表示应跳过（产物文件 / 不在 source root / 不在 content root / 读取失败）。
+     * 返回 null 表示应跳过（不在 source root / 不在 content root / 读取失败）。
      */
     @Nullable
     private SourceSnapshot buildSourceSnapshot(@NotNull Module module, @NotNull VirtualFile vf) {
-        // 跳过 generated source root 下的文件（如 Maven 的 target/generated-sources、
-        // Gradle 的 build/generated 等），避免把构建产物当作源码导出。
-        if (ProjectRootManager.getInstance(project).getFileIndex().isInGeneratedSources(vf)) {
-            return null;
-        }
         ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
         // 确定当前文件落在哪个 source root 下（仅导出源码 / 资源目录里的文件）。
         boolean underSourceRoot = false;

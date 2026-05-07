@@ -35,6 +35,6 @@ public final class PatcherVirtualFile {
 
     @Override
     public String toString() {
-        return getName() + " (" + getPath() + ")";
+        return getName();
     }
 }

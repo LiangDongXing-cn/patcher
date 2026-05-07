@@ -1,7 +1,10 @@
 package com.bit.patcher;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.ide.util.TreeFileChooser;
 import com.intellij.ide.util.TreeFileChooserFactory;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
@@ -12,7 +15,9 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.psi.PsiFile;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBCheckBox;
+import com.intellij.util.ui.tree.TreeUtil;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -137,6 +142,21 @@ public class PatcherToolWindow {
                 service.setPatcherFileTree();
             }
         });
+        // 展开全部按钮
+        AnAction expandAllAction = new AnAction(PatcherBundle.message("patcher.action.expand.all"), PatcherBundle.message("patcher.action.expand.all"), AllIcons.Actions.Expandall) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                TreeUtil.expandAll(service.getSaveFilesTree());
+            }
+        };
+        // 收起全部按钮
+        AnAction collapseAllAction = new AnAction(PatcherBundle.message("patcher.action.collapse.all"), PatcherBundle.message("patcher.action.collapse.all"), AllIcons.Actions.Collapseall) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                TreeUtil.collapseAll(service.getSaveFilesTree(), 0);
+            }
+        };
+        decorator.addExtraActions(expandAllAction, collapseAllAction);
 
         saveFilesPanel.add(decorator.createPanel(), BorderLayout.CENTER);
     }

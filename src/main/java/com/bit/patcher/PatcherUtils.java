@@ -5,11 +5,14 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.TextBrowseFolderListener;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.SimpleListCellRenderer;
 
@@ -18,7 +21,9 @@ import java.io.File;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 工具类：ToolWindow 组件初始化与导出文件解析。
@@ -150,6 +155,7 @@ public class PatcherUtils {
      * 工具类只做纯解析，不再直接写 Service 状态，由调用方按需消费。
      * <p>
      * 实现采用显式栈迭代，避免深度目录递归导致栈溢出。
+     * 同时自动关联生成源码目录中与选中文件相关的文件（如 MapStruct 生成的 Mapper）。
      */
     public static List<PatcherVirtualFile> getExportFile(Project project, VirtualFile virtualFile) {
         List<PatcherVirtualFile> result = new ArrayList<>();
@@ -172,6 +178,75 @@ public class PatcherUtils {
                     .module(moduleForFile)
                     .build());
         }
+        // 自动关联生成源码中的相关文件
+        collectRelatedGeneratedSources(project, result);
         return result;
+    }
+
+    /**
+     * 扫描模块的生成源码目录，查找与已选文件类名相关的生成文件。
+     * 例如：选中 TenantListVo.java 后，自动关联 TenantListVoToXxxMapper.java 等。
+     */
+    private static void collectRelatedGeneratedSources(Project project, List<PatcherVirtualFile> result) {
+        if (result.isEmpty()) {
+            return;
+        }
+        // 收集所有已选文件的类名前缀（不含 .java 后缀）
+        Set<String> classNames = new HashSet<>();
+        Set<String> existingPaths = new HashSet<>();
+        Set<Module> modules = new HashSet<>();
+        for (PatcherVirtualFile pvf : result) {
+            existingPaths.add(pvf.getPath());
+            String name = pvf.getName();
+            if (name.endsWith(PatcherConstants.JAVA_EXT)) {
+                classNames.add(name.substring(0, name.length() - PatcherConstants.JAVA_EXT.length()));
+            }
+            if (pvf.getModule() != null) {
+                modules.add(pvf.getModule());
+            }
+        }
+        if (classNames.isEmpty()) {
+            return;
+        }
+        // 遍历相关模块的所有生成源码目录
+        for (Module module : modules) {
+            VirtualFile[] sourceRoots = ModuleRootManager.getInstance(module).getSourceRoots();
+            for (VirtualFile sourceRoot : sourceRoots) {
+                if (!ProjectRootManager.getInstance(project).getFileIndex().isInGeneratedSources(sourceRoot)) {
+                    continue;
+                }
+                // 在生成源码目录中搜索关联文件
+                Deque<VirtualFile> scanStack = new ArrayDeque<>();
+                scanStack.push(sourceRoot);
+                while (!scanStack.isEmpty()) {
+                    VirtualFile current = scanStack.pop();
+                    if (current.isDirectory()) {
+                        for (VirtualFile child : current.getChildren()) {
+                            scanStack.push(child);
+                        }
+                        continue;
+                    }
+                    // 跳过已存在的文件
+                    if (existingPaths.contains(current.getPath())) {
+                        continue;
+                    }
+                    String fileName = current.getName();
+                    if (!fileName.endsWith(PatcherConstants.JAVA_EXT)) {
+                        continue;
+                    }
+                    // 检查文件名是否以某个已选类名开头（关联生成文件）
+                    for (String className : classNames) {
+                        if (fileName.startsWith(className) && fileName.length() > className.length() + PatcherConstants.JAVA_EXT.length()) {
+                            result.add(PatcherVirtualFile.builder()
+                                    .virtualFile(current)
+                                    .module(module)
+                                    .build());
+                            existingPaths.add(current.getPath());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
