@@ -32,6 +32,11 @@
         ]]></description>
     <change-notes>
         <![CDATA[
+        <h2>2026.1</h2>
+        <ul>
+          <li>兼容 2026.1 新版本。</li>
+          <li>稳健性与架构重构：状态迁移到项目级 Service，通知统一绑定项目，路径映射改用 Path API，修复进度条与取消传导。</li>
+        </ul>
         <h2>2025.1</h2>
         <ul>
           <li>兼容 2025.1 新版本。</li>
@@ -83,6 +88,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Patcher" secondary="true" icon="PatcherIcons.PATCHER" anchor="right"
                     factoryClass="com.bit.patcher.PatcherFactory"/>
+        <notificationGroup id="Patcher" displayType="BALLOON" bundle="messages.PatcherBundle" key="patcher.name"/>
     </extensions>
     <actions>
         <!-- Add your actions here -->

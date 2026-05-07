@@ -7,12 +7,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.PropertyKey;
 
 /**
+ * 国际化资源包的访问入口。
+ *
  * @author Liang
- * @version 1.0
- * @date 2020/12/1 16:00
- * Created by IntelliJ IDEA
- * <p>
- * 获取国际化信息
  */
 public class PatcherBundle extends DynamicBundle {
     public static final PatcherBundle INSTANCE = new PatcherBundle();
@@ -29,7 +26,8 @@ public class PatcherBundle extends DynamicBundle {
      * @param params 国际化信息的参数
      * @return 国际化信息
      */
-    public static @NotNull @Nls String message(@NotNull @PropertyKey(resourceBundle = BUNDLE) String key, @NotNull Object... params) {
+    public static @NotNull @Nls String message(@NotNull @PropertyKey(resourceBundle = BUNDLE) String key,
+            @NotNull Object... params) {
         return INSTANCE.getMessage(key, params);
     }
 }

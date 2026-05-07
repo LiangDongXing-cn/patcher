@@ -3,43 +3,38 @@ package com.bit.patcher;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.Setter;
 
 /**
+ * 选中文件的轻量 VO。
+ * 仅持有 {@link VirtualFile} 与 {@link Module} 两个来源字段，path/name/moduleName
+ * 均动态派生以避免"双真相"。
+ *
  * @author Liang
- * @version 1.0
- * @date 2023/2/26 16:07
- * Created by IntelliJ IDEA
  */
 @Getter
-@Setter
 @Builder
-public class PatcherVirtualFile {
+@EqualsAndHashCode(of = "virtualFile")
+public final class PatcherVirtualFile {
 
-    private VirtualFile virtualFile;
-    private Module module;
-    private String path;
-    private String name;
-    private String moduleName;
+    private final VirtualFile virtualFile;
+    private final Module module;
+
+    public String getPath() {
+        return virtualFile != null ? virtualFile.getPath() : "";
+    }
+
+    public String getName() {
+        return virtualFile != null ? virtualFile.getName() : "";
+    }
+
+    public String getModuleName() {
+        return module != null ? module.getName() : "";
+    }
 
     @Override
     public String toString() {
-        return name + " (" + path + ")";
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        PatcherVirtualFile that = (PatcherVirtualFile) o;
-
-        return virtualFile.equals(that.virtualFile);
-    }
-
-    @Override
-    public int hashCode() {
-        return virtualFile != null ? virtualFile.hashCode() : 0;
+        return getName() + " (" + getPath() + ")";
     }
 }

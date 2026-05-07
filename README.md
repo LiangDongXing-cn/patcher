@@ -20,6 +20,8 @@ Patcher 是一个 IntelliJ IDEA 插件，用于高效地提取和打包 Java 应
 
 ## 安装指南
 
+> 兼容 IntelliJ IDEA 2026.1 及以上版本。
+
 ### 通过 JetBrains 插件市场安装
 
 1. 打开 IntelliJ IDEA
@@ -46,6 +48,6 @@ Patcher 是一个 IntelliJ IDEA 插件，用于高效地提取和打包 Java 应
 
 本项目采用 [MIT 许可证](LICENSE)。
 
-版权所有 (c) 2025 作者名字
+版权所有 (c) 2025 LiangDongXing
 
 除非符合 MIT 许可证的要求，本项目中的所有代码都受版权保护。详细信息请参阅 LICENSE 文件。

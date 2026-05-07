@@ -20,6 +20,8 @@ Patcher is an IntelliJ IDEA plugin designed for efficiently extracting and packa
 
 ## Installation Guide
 
+> Compatible with IntelliJ IDEA 2026.1 and later.
+
 ### Via JetBrains Plugin Marketplace
 
 1. Open IntelliJ IDEA
@@ -46,6 +48,6 @@ Patcher is an IntelliJ IDEA plugin designed for efficiently extracting and packa
 
 This project is licensed under the [MIT License](LICENSE).
 
-Copyright (c) 2025 Author Name
+Copyright (c) 2025 LiangDongXing
 
 All code in this project is copyright protected unless compliant with MIT License requirements. For details, please see the LICENSE file.

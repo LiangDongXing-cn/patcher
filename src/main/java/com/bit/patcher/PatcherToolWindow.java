@@ -19,12 +19,9 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 
 /**
+ * 工具窗口类：维护补丁导出的交互面板。
+ *
  * @author Liang
- * @version 1.0
- * @date 2020/12/1 16:00
- * Created by IntelliJ IDEA
- * <p>
- * 工具窗口类
  */
 @Getter
 public class PatcherToolWindow {
@@ -52,6 +49,8 @@ public class PatcherToolWindow {
 
     /**
      * 创建自定义的用户界面组件
+     * <p>
+     * 由 IntelliJ GUI Designer 生成的 .form 绑定调用，请勿删除。
      */
     public void createUIComponents() {
 
@@ -62,55 +61,83 @@ public class PatcherToolWindow {
     }
 
     /**
+     * 初始化工具窗口组件（模块下拉框、保存路径、导出按钮等）
+     */
+    public void initialize() {
+        // 幂等性：重进入不积累重复项
+        this.moduleNameComboBox.removeAllItems();
+        this.moduleTypeComboBox.removeAllItems();
+        PatcherUtils.setModuleNameComboBox(project, this.moduleNameComboBox);
+        PatcherUtils.setLibraryComboBox(project, this.moduleTypeComboBox);
+        PatcherUtils.setDefaultSavePath(this.savePathTextFieldWithBrowseButton);
+        PatcherUtils.setBrowseFolderListener(project, this.savePathTextFieldWithBrowseButton);
+        ExportService.getInstance(project).exportFile(
+                this.savePathTextFieldWithBrowseButton,
+                this.moduleNameComboBox,
+                this.moduleTypeComboBox,
+                this.exportTheSourceCodeJbCheckBox,
+                this.deleteOldPatcherFilesJbCheckBox,
+                this.exportButton);
+    }
+
+    /**
      * 初始化保存文件的面板
      */
     private void initializationSaveFilesPanel() {
+        PatcherProjectService service = PatcherProjectService.getInstance(project);
         // 创建 ToolbarDecorator，并设置添加、编辑和删除操作
-        ToolbarDecorator decorator = ToolbarDecorator.createDecorator(PVFUtils.getSaveFilesTree());
+        ToolbarDecorator decorator = ToolbarDecorator.createDecorator(service.getSaveFilesTree());
         decorator.setAddAction(anActionButton -> {
             // 处理添加操作
             TreeFileChooser treeFileChooser = TreeFileChooserFactory.getInstance(project)
-                    .createFileChooser(PatcherBundle.message("patcher.value.3"), null, null, null);
+                    .createFileChooser(PatcherBundle.message("patcher.value.select.patch.file"), null, null, null);
             treeFileChooser.showDialog();
             // 获取选中的文件
             PsiFile selectedFile = treeFileChooser.getSelectedFile();
             if (selectedFile != null) {
                 // 获取选中文件的模块
                 Module moduleForFile = ModuleUtil.findModuleForFile(selectedFile.getVirtualFile(), project);
-                assert moduleForFile != null;
+                if (moduleForFile == null) {
+                    return;
+                }
                 // 创建 PatcherVirtualFile 对象
                 PatcherVirtualFile patcherVirtualFile = PatcherVirtualFile.builder()
                         .virtualFile(selectedFile.getVirtualFile())
-                        .path(selectedFile.getVirtualFile().getPath())
-                        .name(selectedFile.getVirtualFile().getName())
-                        .moduleName(moduleForFile.getName())
                         .module(moduleForFile)
                         .build();
                 // 添加到 map 中
-                PVFUtils.setVirtualFilesMapValue(patcherVirtualFile);
-                PVFUtils.setPatcherFileTree();
+                service.setVirtualFilesMapValue(patcherVirtualFile);
+                service.setPatcherFileTree();
             }
         });
         decorator.setEditAction(anActionButton -> {
             // 获取选中的节点
-            DefaultMutableTreeNode defaultMutableTreeNode = (DefaultMutableTreeNode) PVFUtils.getSaveFilesTree().getLastSelectedPathComponent();
+            Object selected = service.getSaveFilesTree().getLastSelectedPathComponent();
+            if (!(selected instanceof DefaultMutableTreeNode defaultMutableTreeNode)) {
+                return;
+            }
             if (defaultMutableTreeNode.getUserObject() instanceof PatcherVirtualFile patcherVirtualFile) {
                 // 打开并激活编辑器
+                if (patcherVirtualFile.getVirtualFile() == null) {
+                    return;
+                }
                 FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
                 fileEditorManager.openFile(patcherVirtualFile.getVirtualFile(), true);
             }
         });
         decorator.setRemoveAction(anActionButton -> {
             // 获取选中的节点
-            DefaultMutableTreeNode defaultMutableTreeNode = (DefaultMutableTreeNode) PVFUtils.getSaveFilesTree().getLastSelectedPathComponent();
+            Object selected = service.getSaveFilesTree().getLastSelectedPathComponent();
+            if (!(selected instanceof DefaultMutableTreeNode defaultMutableTreeNode)) {
+                return;
+            }
             if (defaultMutableTreeNode.getUserObject() instanceof PatcherVirtualFile patcherVirtualFile) {
                 // 从 map 中移除
-                PVFUtils.removeVirtualFilesMapValue(patcherVirtualFile);
-                PVFUtils.setPatcherFileTree();
+                service.removeVirtualFilesMapValue(patcherVirtualFile);
+                service.setPatcherFileTree();
             }
         });
 
         saveFilesPanel.add(decorator.createPanel(), BorderLayout.CENTER);
     }
 }
-
