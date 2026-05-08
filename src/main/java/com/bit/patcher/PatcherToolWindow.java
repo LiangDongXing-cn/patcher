@@ -58,11 +58,11 @@ public class PatcherToolWindow {
      * 通过 DynamicBundle 设置面板标题和组件文本，确保跟随 IDE 语言设置。
      */
     private void applyI18nTitles() {
-        moduleTypePanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.module.type")));
-        moduleNamePanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.module.name")));
-        savePathPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.path")));
-        saveFilesPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.files")));
-        otherPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.other")));
+        moduleTypePanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.module.type"), false));
+        moduleNamePanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.module.name"), false));
+        savePathPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.path"), false));
+        saveFilesPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.files"), false));
+        otherPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.other"), false));
         exportTheSourceCodeJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.export.sources"));
         deleteOldPatcherFilesJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.delete.old"));
         exportButton.setText(PatcherBundle.message("patcher.button.export"));
