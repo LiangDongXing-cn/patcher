@@ -32,6 +32,10 @@
         ]]></description>
     <change-notes>
         <![CDATA[
+        <h2>2026.2</h2>
+        <ul>
+          <li>支持动态插件加载，更新插件无需重启 IDE。</li>
+        </ul>
         <h2>2026.1</h2>
         <ul>
           <li>兼容 2026.1 新版本。</li>

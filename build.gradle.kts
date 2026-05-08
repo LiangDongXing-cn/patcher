@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.bit"
-version = "2026.1"
+version = "2026.2"
 
 repositories {
     mavenCentral()
@@ -44,5 +44,10 @@ tasks {
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+    }
+
+    // 只保留最终的 composed JAR，避免中间产物输出到 libs
+    jar {
+        destinationDirectory.set(layout.buildDirectory.dir("intermediates"))
     }
 }

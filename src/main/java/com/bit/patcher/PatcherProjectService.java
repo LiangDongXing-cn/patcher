@@ -1,5 +1,6 @@
 package com.bit.patcher;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.module.Module;
@@ -33,7 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Liang
  */
 @Service(Service.Level.PROJECT)
-public final class PatcherProjectService {
+public final class PatcherProjectService implements Disposable {
 
     private final Project project;
     private final Tree saveFilesTree = new Tree();
@@ -216,5 +217,11 @@ public final class PatcherProjectService {
     public void clearAll() {
         virtualFilesMap.clear();
         removeAllChildren();
+    }
+
+    @Override
+    public void dispose() {
+        clearAll();
+        toolWindow = null;
     }
 }

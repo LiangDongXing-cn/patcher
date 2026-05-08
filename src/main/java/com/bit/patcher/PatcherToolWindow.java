@@ -13,6 +13,7 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.psi.PsiFile;
+import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.util.ui.tree.TreeUtil;
@@ -49,7 +50,22 @@ public class PatcherToolWindow {
     public PatcherToolWindow(Project project, ToolWindow toolWindow) {
         this.project = project;
         this.toolWindow = toolWindow;
+        applyI18nTitles();
         initializationSaveFilesPanel();
+    }
+
+    /**
+     * 通过 DynamicBundle 设置面板标题和组件文本，确保跟随 IDE 语言设置。
+     */
+    private void applyI18nTitles() {
+        moduleTypePanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.module.type")));
+        moduleNamePanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.module.name")));
+        savePathPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.path")));
+        saveFilesPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.files")));
+        otherPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.other")));
+        exportTheSourceCodeJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.export.sources"));
+        deleteOldPatcherFilesJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.delete.old"));
+        exportButton.setText(PatcherBundle.message("patcher.button.export"));
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.bit.patcher;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.compiler.CompilerManager;
@@ -43,7 +44,7 @@ import java.util.stream.Stream;
  * @author Liang
  */
 @Service(Service.Level.PROJECT)
-public final class ExportService {
+public final class ExportService implements Disposable {
 
     private static final Logger LOG = Logger.getInstance(ExportService.class);
 
@@ -675,5 +676,10 @@ public final class ExportService {
                         }
                     }.queue();
                 }));
+    }
+
+    @Override
+    public void dispose() {
+        // 插件动态卸载时释放资源
     }
 }

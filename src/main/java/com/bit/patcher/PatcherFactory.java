@@ -26,7 +26,7 @@ public class PatcherFactory implements ToolWindowFactory {
 
         Content content = ContentFactory.getInstance().createContent(
                 patcherToolWindow.getContent(),
-                PatcherBundle.message("patcher.name"),
+                "",
                 false);
         toolWindow.getContentManager().addContent(content);
     }

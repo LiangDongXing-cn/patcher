@@ -15,7 +15,9 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.SimpleListCellRenderer;
+import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxEditor;
 import java.io.File;
 import java.util.ArrayDeque;
@@ -46,10 +48,14 @@ public class PatcherUtils {
      */
     public static void setModuleNameComboBox(Project project, ComboBox<String> moduleNameComboBox) {
         // 显示渲染：对内部哨兵渲染为本地化的“多模块”文案（下拉列表项）
-        moduleNameComboBox.setRenderer(SimpleListCellRenderer.create("",
-                item -> PatcherConstants.MULTI_MODULE_SENTINEL.equals(item)
+        moduleNameComboBox.setRenderer(new SimpleListCellRenderer<>() {
+            @Override
+            public void customize(@NotNull JList<? extends String> list, String value, int index, boolean selected, boolean hasFocus) {
+                setText(PatcherConstants.MULTI_MODULE_SENTINEL.equals(value)
                         ? PatcherBundle.message("patcher.value.multi.module")
-                        : item));
+                        : (value != null ? value : ""));
+            }
+        });
         // 可编辑 ComboBox 的选中框由 Editor 控制，不走 Renderer，
         // 这里自定义 Editor 把哨兵值双向映射为本地化文案。
         moduleNameComboBox.setEditor(new BasicComboBoxEditor() {
@@ -163,9 +169,14 @@ public class PatcherUtils {
         stack.push(virtualFile);
         while (!stack.isEmpty()) {
             VirtualFile current = stack.pop();
+            if (!current.isValid()) {
+                continue;
+            }
             if (current.isDirectory()) {
                 for (VirtualFile child : current.getChildren()) {
-                    stack.push(child);
+                    if (child.isValid()) {
+                        stack.push(child);
+                    }
                 }
                 continue;
             }
@@ -220,9 +231,14 @@ public class PatcherUtils {
                 scanStack.push(sourceRoot);
                 while (!scanStack.isEmpty()) {
                     VirtualFile current = scanStack.pop();
+                    if (!current.isValid()) {
+                        continue;
+                    }
                     if (current.isDirectory()) {
                         for (VirtualFile child : current.getChildren()) {
-                            scanStack.push(child);
+                            if (child.isValid()) {
+                                scanStack.push(child);
+                            }
                         }
                         continue;
                     }
