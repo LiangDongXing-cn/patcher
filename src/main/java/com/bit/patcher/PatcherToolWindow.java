@@ -53,6 +53,7 @@ public class PatcherToolWindow {
         this.project = project;
         this.toolWindow = toolWindow;
         applyI18nTitles();
+        initCheckboxLinkage();
         initializationSaveFilesPanel();
     }
 
@@ -70,6 +71,24 @@ public class PatcherToolWindow {
         deleteOldPatcherFilesJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.delete.old"));
         deleteToTrashJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.delete.to.trash"));
         exportButton.setText(PatcherBundle.message("patcher.button.export"));
+    }
+
+    /**
+     * 初始化复选框联动："删除旧补丁" 勾选时 "删除到回收站" 可操作；取消勾选时自动取消并禁用。
+     */
+    private void initCheckboxLinkage() {
+        // 初始状态同步
+        deleteToTrashJbCheckBox.setEnabled(deleteOldPatcherFilesJbCheckBox.isSelected());
+        // 监听变化
+        deleteOldPatcherFilesJbCheckBox.addActionListener(e -> {
+            boolean selected = deleteOldPatcherFilesJbCheckBox.isSelected();
+            deleteToTrashJbCheckBox.setEnabled(selected);
+            if (!selected) {
+                deleteToTrashJbCheckBox.setSelected(false);
+            } else {
+                deleteToTrashJbCheckBox.setSelected(true);
+            }
+        });
     }
 
     /**
