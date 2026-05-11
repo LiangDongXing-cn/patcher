@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxEditor;
-import java.io.File;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -130,16 +129,14 @@ public class PatcherUtils {
     }
 
     /**
-     * 设置保存路径默认值
+     * 设置保存路径默认值（从项目级持久化配置读取，首次使用为桌面路径）
      *
+     * @param project                   项目
      * @param textFieldWithBrowseButton 保存路径的文本框
      */
-    public static void setDefaultSavePath(TextFieldWithBrowseButton textFieldWithBrowseButton) {
-        // 获取桌面路径
-        String desktopPath = System.getProperty("user.home") + File.separator
-                + PatcherConstants.DEFAULT_SAVE_PATH_SUFFIX;
-        // 设置文本框的默认值
-        textFieldWithBrowseButton.setText(desktopPath);
+    public static void setDefaultSavePath(Project project, TextFieldWithBrowseButton textFieldWithBrowseButton) {
+        String savedPath = PatcherSettings.getInstance(project).getSavePath();
+        textFieldWithBrowseButton.setText(savedPath);
     }
 
     /**

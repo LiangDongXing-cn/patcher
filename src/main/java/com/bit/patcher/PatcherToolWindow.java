@@ -116,7 +116,7 @@ public class PatcherToolWindow {
         this.moduleTypeComboBox.removeAllItems();
         PatcherUtils.setModuleNameComboBox(project, this.moduleNameComboBox);
         PatcherUtils.setLibraryComboBox(project, this.moduleTypeComboBox);
-        PatcherUtils.setDefaultSavePath(this.savePathTextFieldWithBrowseButton);
+        PatcherUtils.setDefaultSavePath(project, this.savePathTextFieldWithBrowseButton);
         PatcherUtils.setBrowseFolderListener(project, this.savePathTextFieldWithBrowseButton);
         ExportService.getInstance(project).exportFile(
                 this.savePathTextFieldWithBrowseButton,

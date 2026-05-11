@@ -105,6 +105,9 @@ public final class ExportService implements Disposable {
             return;
         }
 
+        // 持久化保存路径，重启 IDE 后自动恢复
+        PatcherSettings.getInstance(project).setSavePath(savePath);
+
         exportButton.setEnabled(false);
         final Runnable reenable = () -> ApplicationManager.getApplication().invokeLater(
                 () -> exportButton.setEnabled(true));
