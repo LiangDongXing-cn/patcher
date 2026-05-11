@@ -45,6 +45,7 @@ public class PatcherToolWindow {
     private JBCheckBox exportTheSourceCodeJbCheckBox;
     private JBCheckBox deleteOldPatcherFilesJbCheckBox;
     private JBCheckBox deleteToTrashJbCheckBox;
+    private JLabel cleanupHintLabel;
     private JButton exportButton;
     private final Project project;
     private final ToolWindow toolWindow;
@@ -70,6 +71,8 @@ public class PatcherToolWindow {
         exportTheSourceCodeJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.export.sources"));
         deleteOldPatcherFilesJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.delete.old"));
         deleteToTrashJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.delete.to.trash"));
+        cleanupHintLabel.setText(PatcherBundle.message("patcher.cleanup.hint"));
+        cleanupHintLabel.setForeground(com.intellij.util.ui.JBUI.CurrentTheme.ContextHelp.FOREGROUND);
         exportButton.setText(PatcherBundle.message("patcher.button.export"));
     }
 
