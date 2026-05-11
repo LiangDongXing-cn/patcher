@@ -197,6 +197,8 @@ public class PatcherUtils {
     /**
      * 扫描模块的生成源码目录，查找与已选文件类名相关的生成文件。
      * 例如：选中 TenantListVo.java 后，自动关联 TenantListVoToXxxMapper.java 等。
+     * 当发现任何关联文件时，会把该生成源码目录下的所有 Java 文件都包含进来，
+     * 因为全局配置类（如 AutoMapperConfig、ConverterMapperAdapter）在任何 Mapper 变化时都会重新生成。
      */
     private static void collectRelatedGeneratedSources(Project project, List<PatcherVirtualFile> result) {
         if (result.isEmpty()) {
@@ -226,7 +228,9 @@ public class PatcherUtils {
                 if (!ProjectRootManager.getInstance(project).getFileIndex().isInGeneratedSources(sourceRoot)) {
                     continue;
                 }
-                // 在生成源码目录中搜索关联文件
+                // 先扫描该生成源码目录下的所有 Java 文件
+                List<VirtualFile> allGeneratedFiles = new ArrayList<>();
+                boolean hasRelated = false;
                 Deque<VirtualFile> scanStack = new ArrayDeque<>();
                 scanStack.push(sourceRoot);
                 while (!scanStack.isEmpty()) {
@@ -242,7 +246,6 @@ public class PatcherUtils {
                         }
                         continue;
                     }
-                    // 跳过已存在的文件
                     if (existingPaths.contains(current.getPath())) {
                         continue;
                     }
@@ -250,16 +253,26 @@ public class PatcherUtils {
                     if (!fileName.endsWith(PatcherConstants.JAVA_EXT)) {
                         continue;
                     }
-                    // 检查文件名是否以某个已选类名开头（关联生成文件）
-                    for (String className : classNames) {
-                        if (fileName.startsWith(className) && fileName.length() > className.length() + PatcherConstants.JAVA_EXT.length()) {
-                            result.add(PatcherVirtualFile.builder()
-                                    .virtualFile(current)
-                                    .module(module)
-                                    .build());
-                            existingPaths.add(current.getPath());
-                            break;
+                    allGeneratedFiles.add(current);
+                    // 检查是否有与已选类名直接关联的文件
+                    if (!hasRelated) {
+                        for (String className : classNames) {
+                            if (fileName.startsWith(className) && fileName.length() > className.length() + PatcherConstants.JAVA_EXT.length()) {
+                                hasRelated = true;
+                                break;
+                            }
                         }
+                    }
+                }
+                // 如果该生成源码目录下有关联文件，则把该目录下所有文件都加进来
+                // （全局配置类如 AutoMapperConfig、ConverterMapperAdapter 在任何 Mapper 变化时都会重新生成）
+                if (hasRelated) {
+                    for (VirtualFile generatedFile : allGeneratedFiles) {
+                        result.add(PatcherVirtualFile.builder()
+                                .virtualFile(generatedFile)
+                                .module(module)
+                                .build());
+                        existingPaths.add(generatedFile.getPath());
                     }
                 }
             }

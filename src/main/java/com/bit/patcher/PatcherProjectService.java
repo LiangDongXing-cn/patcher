@@ -6,6 +6,7 @@ import com.intellij.openapi.components.Service;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
@@ -147,6 +148,7 @@ public final class PatcherProjectService implements Disposable {
     /**
      * 将文件列表按目录层级构建为树结构节点。
      * 每个中间目录作为一个文件夹节点，叶子节点为 PatcherVirtualFile。
+     * 生成源码目录中的文件不在树中显示（它们是自动关联的，导出时仍会包含）。
      */
     private void buildDirectoryTree(DefaultMutableTreeNode moduleNode, List<PatcherVirtualFile> files) {
         // 查找模块的内容根路径，用于计算相对路径
@@ -165,6 +167,11 @@ public final class PatcherProjectService implements Disposable {
         Map<String, DefaultMutableTreeNode> dirNodes = new HashMap<>();
 
         for (PatcherVirtualFile pvf : files) {
+            // 跳过生成源码目录中的文件（自动关联的，不在树中显示）
+            VirtualFile vf = pvf.getVirtualFile();
+            if (vf != null && ProjectRootManager.getInstance(project).getFileIndex().isInGeneratedSources(vf)) {
+                continue;
+            }
             String filePath = pvf.getPath();
             // 计算相对路径
             String relativePath;

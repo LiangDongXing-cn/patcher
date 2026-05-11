@@ -282,22 +282,16 @@ public final class ExportService implements Disposable {
 
     /**
      * 在 ReadAction 内计算源码导出所需的快照（模块目录、相对路径、文件内容字节）。
-     * 返回 null 表示应跳过（不在 source root / 不在 content root / 读取失败）。
+     * 所有选中的文件都应导出，优先用 content root 作为基准计算相对路径。
+     * 返回 null 表示应跳过（不在 content root / 读取失败）。
      */
     @Nullable
     private SourceSnapshot buildSourceSnapshot(@NotNull Module module, @NotNull VirtualFile vf) {
-        ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
-        // 确定当前文件落在哪个 source root 下（仅导出源码 / 资源目录里的文件）。
-        boolean underSourceRoot = false;
-        for (VirtualFile sourceRoot : rootManager.getSourceRoots()) {
-            if (VfsUtilCore.isAncestor(sourceRoot, vf, false)) {
-                underSourceRoot = true;
-                break;
-            }
-        }
-        if (!underSourceRoot) {
+        // 跳过生成源码目录中的文件（如 MapStruct 生成的 Mapper），它们只需导出 class，不需要导出源码
+        if (ProjectRootManager.getInstance(project).getFileIndex().isInGeneratedSources(vf)) {
             return null;
         }
+        ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
         // 用模块的 content root 作为基准计算相对路径，保留 src/main/java、src/main/resources 等中间目录。
         VirtualFile moduleRoot = null;
         for (VirtualFile contentRoot : rootManager.getContentRoots()) {
@@ -426,12 +420,15 @@ public final class ExportService implements Disposable {
     }
 
     /**
-     * 在 ReadAction 内构造 class 导出所需的路径快照。
+     * 在 ReadAction 内构造补丁导出所需的路径快照。
      * <p>
-     * 优先尝试将 vf 匹配到某个 source root 下，成功则返回 {@link ExportMode#SOURCE_ROOT}
-     * 模式的 plan；若 vf 位于 source root 下但内部路径无法解析则返回
-     * {@link ExportMode#NONE}（不再 fallback webapp）；彻底没命中 source root
-     * 才尝试 webapp 资源分支（同时在读锁内读取字节）。
+     * 补丁导出原则：统一从编译输出（target）目录查找文件。
+     * <ul>
+     *   <li>Java 文件 → 查找对应的 .class 文件（含内部类）</li>
+     *   <li>非 Java 文件 → 查找同名文件（资源文件会被编译器复制到输出目录）</li>
+     *   <li>webapp 资源 → 按 webapp 相对路径直接复制源文件</li>
+     * </ul>
+     * 如果文件在编译输出目录中不存在则跳过（不导出）。
      */
     @Nullable
     private ClassExportPlan buildClassExportPlan(@NotNull Module module,
@@ -439,84 +436,74 @@ public final class ExportService implements Disposable {
             @NotNull Path pm,
             @Nullable String typeKey) {
         String safeTypeKey = typeKey == null ? "" : typeKey;
+        String fileName = vf.getName();
+        boolean isJavaFile = fileName.endsWith(PatcherConstants.JAVA_EXT);
 
         CompilerModuleExtension compilerExt = CompilerModuleExtension.getInstance(module);
-        if (compilerExt == null) {
-            LOG.warn(String.format("Skip module without CompilerModuleExtension: %s", module.getName()));
-            return null;
-        }
-        VirtualFile compilerOutputPath = compilerExt.getCompilerOutputPath();
-        if (compilerOutputPath == null) {
-            LOG.warn(String.format("Skip module without compiler output: %s", module.getName()));
-            return null;
-        }
+        VirtualFile compilerOutputPath = compilerExt == null ? null : compilerExt.getCompilerOutputPath();
 
-        boolean handledBySource = false;
-        for (VirtualFile sourceRoot : ModuleRootManager.getInstance(module).getSourceRoots()) {
-            if (!VfsUtilCore.isAncestor(sourceRoot, vf, false)) {
-                continue;
+        // 尝试在 source root 下查找，从编译输出目录导出
+        if (compilerOutputPath != null) {
+            for (VirtualFile sourceRoot : ModuleRootManager.getInstance(module).getSourceRoots()) {
+                if (!VfsUtilCore.isAncestor(sourceRoot, vf, false)) {
+                    continue;
+                }
+                VirtualFile parentVf = vf.getParent();
+                if (parentVf == null || (!VfsUtilCore.isAncestor(sourceRoot, parentVf, false)
+                        && !sourceRoot.equals(parentVf))) {
+                    continue;
+                }
+                Path sourceRootPath = Paths.get(sourceRoot.getPath());
+                Path compilerOutputDir = Paths.get(compilerOutputPath.getPath());
+                // 文件父目录相对于 source root 的路径
+                Path relParent = sourceRoot.equals(parentVf) ? Paths.get("")
+                        : sourceRootPath.relativize(Paths.get(parentVf.getPath()));
+                Path searchPath = relParent.toString().isEmpty() ? compilerOutputDir
+                        : compilerOutputDir.resolve(relParent);
+
+                // 目标目录：相对于 classpath 的路径映射到 pm 下
+                Path classpath = safeTypeKey.isEmpty() ? compilerOutputDir : compilerOutputDir.getParent();
+                if (classpath == null) {
+                    continue;
+                }
+                Path targetDir = classpath.equals(searchPath) ? pm
+                        : pm.resolve(classpath.relativize(searchPath).toString());
+
+                if (isJavaFile) {
+                    // Java 文件：匹配 Foo.class 及内部类 Foo$Inner.class
+                    String stem = fileName.substring(0, fileName.length() - PatcherConstants.JAVA_EXT.length());
+                    String exactClass = stem + PatcherConstants.CLASS_EXT;
+                    String innerPrefix = stem + "$";
+                    return ClassExportPlan.source(targetDir, searchPath, exactClass, innerPrefix);
+                } else {
+                    // 非 Java 文件：在编译输出中按原文件名查找
+                    return ClassExportPlan.source(targetDir, searchPath, fileName, null);
+                }
             }
-            handledBySource = true;
-            VirtualFile parentVf = vf.getParent();
-            if (parentVf == null || (!VfsUtilCore.isAncestor(sourceRoot, parentVf, false)
-                    && !sourceRoot.equals(parentVf))) {
-                continue;
-            }
-            Path sourceRootPath = Paths.get(sourceRoot.getPath());
-            Path compilerOutputDir = Paths.get(compilerOutputPath.getPath());
-            // 编译输出中对应的目录
-            Path relParent = sourceRoot.equals(parentVf) ? Paths.get("")
-                    : sourceRootPath.relativize(Paths.get(parentVf.getPath()));
-            Path searchPath = relParent.toString().isEmpty() ? compilerOutputDir
-                    : compilerOutputDir.resolve(relParent);
-
-            // 仅替换文件名末尾的 .java
-            String fileName = vf.getName();
-            String stem = fileName.endsWith(PatcherConstants.JAVA_EXT)
-                    ? fileName.substring(0, fileName.length() - PatcherConstants.JAVA_EXT.length())
-                    : fileName;
-            // 需要匹配 Foo.class 以及同名内部类 Foo$Inner.class（但不能误伤 FooBar.class）
-            String exactClass = stem + PatcherConstants.CLASS_EXT;
-            String innerPrefix = stem + "$";
-
-            // 目标目录：相对于 classpath 的路径映射到 pm 下
-            Path classpath = safeTypeKey.isEmpty() ? compilerOutputDir : compilerOutputDir.getParent();
-            if (classpath == null) {
-                continue;
-            }
-            Path targetDir = classpath.equals(searchPath) ? pm
-                    : pm.resolve(classpath.relativize(searchPath).toString());
-            return ClassExportPlan.source(targetDir, searchPath, exactClass, innerPrefix);
-        }
-        if (handledBySource) {
-            return ClassExportPlan.empty();
         }
 
-        // 非 source root 下：尝试 webapp 资源
+        // 不在 source root 下的文件：尝试 webapp 资源路径
         String lowerPath = StringUtil.toLowerCase(vf.getPath());
-        String relative;
         int webappIdx = lowerPath.indexOf(PatcherConstants.WEBAPP_SEGMENT);
         if (webappIdx >= 0) {
-            relative = vf.getPath().substring(webappIdx + PatcherConstants.WEBAPP_SEGMENT.length());
-        } else if (lowerPath.endsWith("/webapp")) {
-            // 路径末段正好是 webapp 目录本身
-            relative = "";
-        } else {
-            return null;
+            String relative = vf.getPath().substring(webappIdx + PatcherConstants.WEBAPP_SEGMENT.length());
+            Path parent = pm.getParent();
+            if (parent == null) {
+                return null;
+            }
+            Path webTargetFile = parent.resolve(relative);
+            byte[] webBytes;
+            try {
+                webBytes = vf.contentsToByteArray();
+            } catch (IOException ex) {
+                LOG.error(String.format("Failed to read web resource content: %s", vf.getPath()), ex);
+                return null;
+            }
+            return ClassExportPlan.webapp(webTargetFile, webBytes);
         }
-        Path parent = pm.getParent();
-        if (parent == null) {
-            return null;
-        }
-        Path webTargetFile = parent.resolve(relative);
-        byte[] webBytes;
-        try {
-            webBytes = vf.contentsToByteArray();
-        } catch (IOException ex) {
-            LOG.error(String.format("Failed to read web resource content: %s", vf.getPath()), ex);
-            return null;
-        }
-        return ClassExportPlan.webapp(webTargetFile, webBytes);
+
+        // 不在 source root 也不在 webapp 下，编译输出中无法找到对应文件，跳过
+        return null;
     }
 
     /**
@@ -544,8 +531,11 @@ public final class ExportService implements Disposable {
         try (Stream<Path> stream = Files.walk(searchPath)) {
             stream.filter(Files::isRegularFile).filter(p -> {
                 String n = p.getFileName().toString();
-                return n.equals(exactClass)
-                        || (n.startsWith(innerPrefix) && n.endsWith(PatcherConstants.CLASS_EXT));
+                if (n.equals(exactClass)) {
+                    return true;
+                }
+                // innerPrefix 为 null 表示资源文件，不需要匹配内部类
+                return innerPrefix != null && n.startsWith(innerPrefix) && n.endsWith(PatcherConstants.CLASS_EXT);
             }).forEach(currentFile -> {
                 try {
                     Path file = targetDir.resolve(currentFile.getFileName().toString());
