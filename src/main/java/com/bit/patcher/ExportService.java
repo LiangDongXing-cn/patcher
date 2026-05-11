@@ -66,6 +66,7 @@ public final class ExportService implements Disposable {
             ComboBox<PatcherModuleType> moduleTypeComboBox,
             JBCheckBox exportTheSourceCodeJbCheckBox,
             JBCheckBox deleteOldPatcherFilesJbCheckBox,
+            JBCheckBox deleteToTrashJbCheckBox,
             JButton exportButton) {
         // 防止重复注册
         for (ActionListener l : exportButton.getActionListeners()) {
@@ -77,6 +78,7 @@ public final class ExportService implements Disposable {
                 moduleTypeComboBox,
                 exportTheSourceCodeJbCheckBox,
                 deleteOldPatcherFilesJbCheckBox,
+                deleteToTrashJbCheckBox,
                 exportButton));
     }
 
@@ -85,6 +87,7 @@ public final class ExportService implements Disposable {
             ComboBox<PatcherModuleType> moduleTypeComboBox,
             JBCheckBox exportTheSourceCodeJbCheckBox,
             JBCheckBox deleteOldPatcherFilesJbCheckBox,
+            JBCheckBox deleteToTrashJbCheckBox,
             JButton exportButton) {
         Map<String, List<PatcherVirtualFile>> virtualFilesMap = PatcherProjectService.getInstance(project)
                 .getVirtualFilesMap();
@@ -107,6 +110,7 @@ public final class ExportService implements Disposable {
                 () -> exportButton.setEnabled(true));
 
         final boolean deleteOld = deleteOldPatcherFilesJbCheckBox.isSelected();
+        final boolean deleteToTrash = deleteToTrashJbCheckBox.isSelected();
         final boolean exportSources = exportTheSourceCodeJbCheckBox.isSelected();
 
         Task.Backgroundable preTask = new Task.Backgroundable(project, PatcherBundle.message("patcher.name"), true) {
@@ -130,7 +134,7 @@ public final class ExportService implements Disposable {
 
                 if (deleteOld) {
                     indicator.setText(PatcherBundle.message("patcher.progress.delete.old"));
-                    exportDeleteFile(savePath, indicator);
+                    exportDeleteFile(savePath, deleteToTrash, indicator);
                 }
                 indicator.checkCanceled();
 
@@ -166,7 +170,7 @@ public final class ExportService implements Disposable {
     /**
      * 删除旧的补丁文件（只删除 {@code <保存路径>/<项目名>} 与 {@code <保存路径>/<项目名>-sources} 两个子树）。
      */
-    private void exportDeleteFile(String savePath, @NotNull ProgressIndicator indicator) {
+    private void exportDeleteFile(String savePath, boolean deleteToTrash, @NotNull ProgressIndicator indicator) {
         Path baseDir = Paths.get(savePath);
         Path[] targets = new Path[] {
                 baseDir.resolve(project.getName()),
@@ -177,29 +181,50 @@ public final class ExportService implements Disposable {
             if (!Files.exists(target)) {
                 continue;
             }
-            try {
-                Files.walkFileTree(target, new SimpleFileVisitor<>() {
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                        indicator.checkCanceled();
-                        Files.delete(file);
-                        return FileVisitResult.CONTINUE;
+            if (deleteToTrash) {
+                // 移动到回收站
+                if (!java.awt.Desktop.isDesktopSupported() || !java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.MOVE_TO_TRASH)) {
+                    LOG.warn("Desktop MOVE_TO_TRASH not supported, falling back to direct delete");
+                    deleteDirectly(target, indicator);
+                } else {
+                    boolean moved = java.awt.Desktop.getDesktop().moveToTrash(target.toFile());
+                    if (!moved) {
+                        LOG.warn(String.format("Failed to move to trash, falling back to direct delete: %s", target));
+                        deleteDirectly(target, indicator);
                     }
-
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                        if (exc != null) {
-                            throw exc;
-                        }
-                        Files.delete(dir);
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            } catch (IOException ex) {
-                LOG.error(String.format("Failed to delete old patch files: %s", target), ex);
-                PatcherNotificationUtils.errorNotification(project,
-                        PatcherBundle.message("patcher.error.delete.old.files", target, ex.getMessage()));
+                }
+            } else {
+                deleteDirectly(target, indicator);
             }
+        }
+    }
+
+    /**
+     * 直接删除目录树（不经过回收站）。
+     */
+    private void deleteDirectly(Path target, @NotNull ProgressIndicator indicator) {
+        try {
+            Files.walkFileTree(target, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    indicator.checkCanceled();
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    if (exc != null) {
+                        throw exc;
+                    }
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException ex) {
+            LOG.error(String.format("Failed to delete old patch files: %s", target), ex);
+            PatcherNotificationUtils.errorNotification(project,
+                    PatcherBundle.message("patcher.error.delete.old.files", target, ex.getMessage()));
         }
     }
 

@@ -40,9 +40,11 @@ public class PatcherToolWindow {
     private JPanel savePathPanel;
     private TextFieldWithBrowseButton savePathTextFieldWithBrowseButton;
     private JPanel saveFilesPanel;
-    private JPanel otherPanel;
+    private JPanel exportOptionsPanel;
+    private JPanel cleanupOptionsPanel;
     private JBCheckBox exportTheSourceCodeJbCheckBox;
     private JBCheckBox deleteOldPatcherFilesJbCheckBox;
+    private JBCheckBox deleteToTrashJbCheckBox;
     private JButton exportButton;
     private final Project project;
     private final ToolWindow toolWindow;
@@ -62,9 +64,11 @@ public class PatcherToolWindow {
         moduleNamePanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.module.name"), false));
         savePathPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.path"), false));
         saveFilesPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.files"), false));
-        otherPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.save.other"), false));
+        exportOptionsPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.panel.export.options"), false));
+        cleanupOptionsPanel.setBorder(IdeBorderFactory.createTitledBorder(PatcherBundle.message("patcher.panel.cleanup.options"), false));
         exportTheSourceCodeJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.export.sources"));
         deleteOldPatcherFilesJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.delete.old"));
+        deleteToTrashJbCheckBox.setText(PatcherBundle.message("patcher.checkbox.delete.to.trash"));
         exportButton.setText(PatcherBundle.message("patcher.button.export"));
     }
 
@@ -98,6 +102,7 @@ public class PatcherToolWindow {
                 this.moduleTypeComboBox,
                 this.exportTheSourceCodeJbCheckBox,
                 this.deleteOldPatcherFilesJbCheckBox,
+                this.deleteToTrashJbCheckBox,
                 this.exportButton);
     }
 
